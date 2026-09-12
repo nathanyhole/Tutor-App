@@ -190,11 +190,24 @@ export default function NewLessonPage() {
             {formula.trim() && <div className="formula-box" style={{ marginBottom: 24 }}>{formula}</div>}
 
             <span className="kicker">Worked example</span>
-            <div style={{ border: '1px solid var(--color-divider)', padding: '4px 20px' }}>
+            <div style={{ border: '1px solid var(--color-divider)', padding: '4px 20px', marginBottom: 32 }}>
               {(previewSteps.length ? previewSteps : ['No worked example steps added yet.']).map((s, i) => (
                 <div key={i} className="worked-step">
                   <div style={{ fontFamily: 'var(--font-heading)', fontSize: 14, width: 20 }}>{i + 1}</div>
                   <div style={{ fontSize: 14, lineHeight: 1.6 }}>{s}</div>
+                </div>
+              ))}
+            </div>
+
+            <span className="kicker">Practice questions</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {questions.filter((q) => q.question.trim()).length === 0 && (
+                <p style={{ fontSize: 14, opacity: 0.7 }}>No practice questions added yet.</p>
+              )}
+              {questions.filter((q) => q.question.trim()).map((q, i) => (
+                <div key={i} style={{ border: '1px solid var(--color-divider)', padding: 16 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Q{i + 1}. {q.question}</div>
+                  <div style={{ fontSize: 13, opacity: 0.7 }}>Answer: {q.answer || '—'}</div>
                 </div>
               ))}
             </div>
