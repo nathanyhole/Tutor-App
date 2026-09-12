@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { IconHome, IconBook, IconChat, IconUpload, IconTrend, IconUsers } from './icons';
+import { createClient } from '@/lib/supabase/client';
 
 const IconFolder = (props: React.SVGProps<SVGSVGElement>) => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
@@ -36,8 +37,15 @@ export default function Sidebar({
   initials: string;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const supabase = createClient();
   const items = role === 'student' ? studentNav : tutorNav;
   const brandHref = role === 'student' ? '/dashboard' : '/tutor';
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    router.push('/login');
+  }
 
   return (
     <aside className="sidebar" style={{ width: role === 'tutor' ? 220 : 240 }}>
@@ -55,10 +63,23 @@ export default function Sidebar({
       </nav>
       <div className="identity">
         <div className="avatar">{initials}</div>
-        <div style={{ fontSize: 13, lineHeight: 1.3, overflow: 'hidden' }}>
+        <div style={{ fontSize: 13, lineHeight: 1.3, overflow: 'hidden', flex: 1 }}>
           <div style={{ fontWeight: 600 }}>{name}</div>
           <div className="text-muted">{meta}</div>
         </div>
+        <button
+          type="button"
+          onClick={signOut}
+          title="Sign out"
+          aria-label="Sign out"
+          style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'inherit', opacity: 0.6, flexShrink: 0, padding: 4 }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <path d="M16 17l5-5-5-5" />
+            <path d="M21 12H9" />
+          </svg>
+        </button>
       </div>
     </aside>
   );
