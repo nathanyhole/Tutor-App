@@ -33,13 +33,23 @@ create table topic_mastery (
   primary key (student_id, topic_id)
 );
 
+create type lesson_status as enum ('draft', 'in_review', 'published');
+
 create table lessons (
   id uuid primary key default gen_random_uuid(),
   topic_id uuid not null references topics(id) on delete cascade,
+  level exam_level not null default 'A-Level',
   title text not null,
-  video_url text,
+  video_path text, -- Supabase Storage object path, bucket 'lesson-videos'
+  worksheet_path text, -- Supabase Storage object path, bucket 'lesson-worksheets'
   revision_notes text,
-  worked_example jsonb -- array of { step: number, text: string }
+  key_formula text,
+  worked_example jsonb not null default '[]', -- array of { step: number, text: string }
+  practice_questions jsonb not null default '[]', -- array of { question: string, answer: string }
+  status lesson_status not null default 'draft',
+  created_by uuid references profiles(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create table chat_sessions (
@@ -105,3 +115,23 @@ create policy "Tutors can view their students' topic mastery" on topic_mastery
   );
 create policy "Tutors can view their assigned students list" on tutor_students
   for select using (auth.uid() = tutor_id);
+
+alter table topics enable row level security;
+alter table lessons enable row level security;
+create policy "Anyone signed in can read topics" on topics
+  for select using (auth.role() = 'authenticated');
+
+-- students see only published lessons; tutors see everything (draft/in_review/published)
+create policy "Students can read published lessons" on lessons
+  for select using (
+    status = 'published'
+    or exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'tutor')
+  );
+create policy "Tutors can create lessons" on lessons
+  for insert with check (
+    exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'tutor')
+  );
+create policy "Tutors can update lessons" on lessons
+  for update using (
+    exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'tutor')
+  );
