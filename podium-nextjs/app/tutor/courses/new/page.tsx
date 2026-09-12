@@ -175,16 +175,26 @@ export default function NewLessonPage() {
           </div>
           <div style={{ maxWidth: 780, margin: '0 auto', padding: '40px clamp(20px,4vw,56px)' }}>
             <span className="kicker">{topicName} · {level}</span>
-            <h1 style={{ fontSize: 30 }}>{title.trim() || 'Untitled lesson'}</h1>
+            <h1 style={{ fontSize: 30, marginBottom: 24 }}>{title.trim() || 'Untitled lesson'}</h1>
+
+            {videoPreviewUrl ? (
+              <video src={videoPreviewUrl} controls style={{ width: '100%', aspectRatio: '16/9', marginBottom: 32, border: '1px solid var(--color-divider)' }} />
+            ) : (
+              <div style={{ aspectRatio: '16/9', border: '1px solid var(--color-divider)', marginBottom: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-surface)' }}>
+                <span style={{ fontSize: 13, opacity: 0.6 }}>No video uploaded yet</span>
+              </div>
+            )}
+
             <span className="kicker">Revision notes</span>
-            <p style={{ fontSize: 15, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{notes.trim() || 'No revision notes added yet.'}</p>
-            {formula.trim() && <div className="formula-box" style={{ marginBottom: 20 }}>{formula}</div>}
+            <p style={{ fontSize: 15, lineHeight: 1.7, whiteSpace: 'pre-wrap', margin: '0 0 20px', maxWidth: '68ch' }}>{notes.trim() || 'No revision notes added yet.'}</p>
+            {formula.trim() && <div className="formula-box" style={{ marginBottom: 24 }}>{formula}</div>}
+
             <span className="kicker">Worked example</span>
             <div style={{ border: '1px solid var(--color-divider)', padding: '4px 20px' }}>
               {(previewSteps.length ? previewSteps : ['No worked example steps added yet.']).map((s, i) => (
                 <div key={i} className="worked-step">
                   <div style={{ fontFamily: 'var(--font-heading)', fontSize: 14, width: 20 }}>{i + 1}</div>
-                  <div style={{ fontSize: 14 }}>{s}</div>
+                  <div style={{ fontSize: 14, lineHeight: 1.6 }}>{s}</div>
                 </div>
               ))}
             </div>
