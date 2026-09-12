@@ -19,6 +19,8 @@ export default function NewLessonPage() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
 
   async function resolveTopicId(name: string) {
     const { data: existing } = await supabase.from('topics').select('id').eq('name', name).maybeSingle();
@@ -34,12 +36,22 @@ export default function NewLessonPage() {
     try {
       const topic_id = await resolveTopicId(topicName);
       const { data: userData } = await supabase.auth.getUser();
+
+      let video_path: string | null = null;
+      if (videoFile) {
+        const path = `${userData.user?.id}/${Date.now()}-${videoFile.name}`;
+        const { error: uploadError } = await supabase.storage.from('lesson-videos').upload(path, videoFile);
+        if (uploadError) throw uploadError;
+        video_path = path;
+      }
+
       const { error } = await supabase.from('lessons').insert({
         topic_id,
         level,
         title: title || 'Untitled lesson',
         revision_notes: notes,
         key_formula: formula,
+        video_path,
         worked_example: steps.filter((s) => s.trim()).map((text, i) => ({ step: i + 1, text })),
         practice_questions: questions.filter((q) => q.question.trim()),
         status,
@@ -95,6 +107,22 @@ export default function NewLessonPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div style={{ border: '1px solid var(--color-divider)', padding: 24, marginBottom: 24 }}>
+        <span className="kicker">Video guide</span>
+        <input
+          type="file"
+          accept="video/*"
+          onChange={(e) => {
+            const file = e.target.files?.[0] ?? null;
+            setVideoFile(file);
+            setVideoPreviewUrl(file ? URL.createObjectURL(file) : null);
+          }}
+        />
+        {videoPreviewUrl && (
+          <video src={videoPreviewUrl} controls style={{ width: '100%', marginTop: 12, aspectRatio: '16/9' }} />
+        )}
       </div>
 
       <div style={{ border: '1px solid var(--color-divider)', padding: 24, marginBottom: 24 }}>
