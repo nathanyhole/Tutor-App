@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
@@ -13,6 +13,14 @@ type Question = {
 };
 
 export default function PracticeSkillPage() {
+  return (
+    <Suspense fallback={<main style={{ flex: 1, padding: '40px clamp(20px,4vw,56px)' }}>Loading...</main>}>
+      <PracticeContent />
+    </Suspense>
+  );
+}
+
+function PracticeContent() {
   const params = useSearchParams();
   const router = useRouter();
   const supabase = createClient();

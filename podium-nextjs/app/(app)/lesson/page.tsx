@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Blueprint from '@/components/Blueprint';
@@ -21,6 +21,14 @@ type Lesson = {
 type SkillOption = { id: string; name: string; hasLesson: boolean };
 
 export default function LessonPage() {
+  return (
+    <Suspense fallback={<main style={{ flex: 1, padding: '40px clamp(20px,4vw,56px)' }}>Loading...</main>}>
+      <LessonContent />
+    </Suspense>
+  );
+}
+
+function LessonContent() {
   const params = useSearchParams();
   const supabase = createClient();
   const skillParam = params.get('skill');
