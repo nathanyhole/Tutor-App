@@ -12,8 +12,17 @@ const IconFolder = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+const IconTarget = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <circle cx="12" cy="12" r="9" />
+    <circle cx="12" cy="12" r="5" />
+    <circle cx="12" cy="12" r="1" />
+  </svg>
+);
+
 const studentNav = [
   { href: '/dashboard', label: 'Dashboard', Icon: IconHome },
+  { href: '/skills', label: 'Skill checklist', Icon: IconTarget },
   { href: '/lesson', label: 'Lessons', Icon: IconBook },
   { href: '/chat', label: 'AI Tutor', Icon: IconChat },
   { href: '/homework', label: 'Homework', Icon: IconUpload },
@@ -23,6 +32,7 @@ const studentNav = [
 const tutorNav = [
   { href: '/tutor', label: 'Students', Icon: IconUsers },
   { href: '/tutor/courses', label: 'Courses', Icon: IconFolder },
+  { href: '/tutor/questions/new', label: 'Diagnostic Qs', Icon: IconTarget },
 ];
 
 export default function Sidebar({
