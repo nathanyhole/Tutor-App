@@ -1,10 +1,9 @@
-const topics = [
-  { name: 'Algebra', pct: '82%' },
-  { name: 'Trigonometry', pct: '58%' },
-  { name: 'Calculus', pct: '41%' },
-  { name: 'Statistics', pct: '70%' },
-  { name: 'Mechanics', pct: '63%' },
-];
+'use client';
+
+import { useEffect, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
+
+type SkillRow = { id: string; name: string; p_mastery: number; attempts_count: number };
 
 const history = [
   { title: 'Chain rule practice', topic: 'Calculus', score: '12/20', tag: 'tag-neutral', note: 'Sign error on the inner derivative — see AI marking', date: 'Today' },
@@ -15,27 +14,59 @@ const history = [
 ];
 
 export default function ProgressPage() {
+  const supabase = createClient();
+  const [skills, setSkills] = useState<SkillRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const { data: topic } = await supabase.from('topics').select('id').eq('name', 'Integration').maybeSingle();
+      if (!topic) { setLoading(false); return; }
+      const { data: skillRows } = await supabase
+        .from('skills')
+        .select('id, name, sort_order')
+        .eq('topic_id', topic.id)
+        .order('sort_order');
+      const { data: masteryRows } = await supabase
+        .from('skill_mastery')
+        .select('skill_id, p_mastery, attempts_count')
+        .eq('student_id', userData.user?.id);
+      const masteryMap = new Map((masteryRows ?? []).map((m) => [m.skill_id, m]));
+      setSkills((skillRows ?? []).map((s) => ({
+        id: s.id, name: s.name,
+        p_mastery: masteryMap.get(s.id)?.p_mastery ?? 0.3,
+        attempts_count: masteryMap.get(s.id)?.attempts_count ?? 0,
+      })));
+      setLoading(false);
+    })();
+  }, []);
+
   return (
     <main style={{ flex: 1, padding: '40px clamp(20px,4vw,56px)', maxWidth: 1200 }}>
       <h1 style={{ fontSize: 28, marginBottom: 6 }}>Progress</h1>
       <p style={{ fontSize: 14, margin: '0 0 32px', opacity: 0.78 }}>
-        Mastery by topic and how your marked homework scores have moved.
+        Mastery per examinable skill and how your marked homework scores have moved.
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 40 }}>
         <div style={{ border: '1px solid var(--color-divider)', padding: 24 }}>
-          <span className="kicker">Topic mastery</span>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {topics.map((t) => (
-              <div key={t.name}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 6 }}>
-                  <span>{t.name}</span>
-                  <span style={{ opacity: 0.7 }}>{t.pct}</span>
+          <span className="kicker">Skill mastery — Integration</span>
+          {loading ? (
+            <p style={{ fontSize: 14, opacity: 0.7 }}>Loading...</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {skills.map((s) => (
+                <div key={s.id}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 6 }}>
+                    <span>{s.name}</span>
+                    <span style={{ opacity: 0.7 }}>{s.attempts_count === 0 ? 'Not started' : `${Math.round(s.p_mastery * 100)}%`}</span>
+                  </div>
+                  <div className="bar-track"><div className="bar-fill" style={{ width: `${Math.round(s.p_mastery * 100)}%` }} /></div>
                 </div>
-                <div className="bar-track"><div className="bar-fill" style={{ width: t.pct }} /></div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div style={{ border: '1px solid var(--color-divider)', padding: 24 }}>

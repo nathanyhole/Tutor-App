@@ -16,12 +16,12 @@ export default async function CoursesPage() {
   const supabase = await createClient();
   const { data: lessons } = await supabase
     .from('lessons')
-    .select('id, title, status, updated_at, topics(name)')
+    .select('id, title, status, updated_at, skills(name, topics(name))')
     .order('updated_at', { ascending: false });
 
   const groups = new Map<string, typeof lessons>();
   for (const l of lessons ?? []) {
-    const topicName = (l as any).topics?.name ?? 'Uncategorised';
+    const topicName = (l as any).skills?.topics?.name ?? 'Uncategorised';
     if (!groups.has(topicName)) groups.set(topicName, []);
     groups.get(topicName)!.push(l);
   }
@@ -31,7 +31,7 @@ export default async function CoursesPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
         <div>
           <h1 style={{ fontSize: 28 }}>Courses</h1>
-          <p style={{ fontSize: 14, margin: '6px 0 0', opacity: 0.78 }}>A-Level &amp; GCSE Maths · all lessons across topics</p>
+          <p style={{ fontSize: 14, margin: '6px 0 0', opacity: 0.78 }}>A-Level &amp; GCSE Maths · lessons grouped by topic, tagged to a skill</p>
         </div>
         <Link href="/tutor/courses/new">
           <button type="button" className="btn btn-primary">New lesson</button>
@@ -53,7 +53,7 @@ export default async function CoursesPage() {
               <div>
                 <div style={{ fontSize: 14, fontWeight: 600 }}>{l.title}</div>
                 <div style={{ fontSize: 12, opacity: 0.7, marginTop: 2 }}>
-                  Edited {new Date(l.updated_at).toLocaleDateString()}
+                  Skill: {(l as any).skills?.name ?? '—'} · Edited {new Date(l.updated_at).toLocaleDateString()}
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

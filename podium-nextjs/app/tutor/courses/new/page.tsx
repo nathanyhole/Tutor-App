@@ -1,17 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
-const TOPICS = ['Calculus', 'Algebra', 'Trigonometry', 'Statistics', 'Mechanics'];
+type Skill = { id: string; name: string; topic_id: string; level: string };
 
 export default function NewLessonPage() {
   const router = useRouter();
   const supabase = createClient();
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [skillId, setSkillId] = useState('');
   const [title, setTitle] = useState('');
-  const [topicName, setTopicName] = useState(TOPICS[0]);
-  const [level, setLevel] = useState('A-Level');
   const [notes, setNotes] = useState('');
   const [formula, setFormula] = useState('');
   const [steps, setSteps] = useState<string[]>(['', '']);
@@ -22,19 +22,20 @@ export default function NewLessonPage() {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
 
-  async function resolveTopicId(name: string) {
-    const { data: existing } = await supabase.from('topics').select('id').eq('name', name).maybeSingle();
-    if (existing) return existing.id;
-    const { data: created, error } = await supabase.from('topics').insert({ name, subject: 'Maths' }).select('id').single();
-    if (error) throw error;
-    return created.id;
-  }
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from('skills').select('id, name, topic_id, level').order('sort_order');
+      setSkills(data ?? []);
+      if (data?.[0]) setSkillId(data[0].id);
+    })();
+  }, []);
 
   async function save(status: 'draft' | 'in_review') {
+    const skill = skills.find((s) => s.id === skillId);
+    if (!skill) { setError('Choose a skill first.'); return; }
     setSaving(true);
     setError(null);
     try {
-      const topic_id = await resolveTopicId(topicName);
       const { data: userData } = await supabase.auth.getUser();
 
       let video_path: string | null = null;
@@ -46,8 +47,9 @@ export default function NewLessonPage() {
       }
 
       const { error } = await supabase.from('lessons').insert({
-        topic_id,
-        level,
+        skill_id: skill.id,
+        topic_id: skill.topic_id,
+        level: skill.level,
         title: title || 'Untitled lesson',
         revision_notes: notes,
         key_formula: formula,
@@ -67,6 +69,7 @@ export default function NewLessonPage() {
   }
 
   const previewSteps = steps.filter((s) => s.trim());
+  const skillName = skills.find((s) => s.id === skillId)?.name ?? '';
 
   return (
     <main style={{ flex: 1, padding: '40px clamp(20px,4vw,56px)', maxWidth: 760 }}>
@@ -88,23 +91,14 @@ export default function NewLessonPage() {
         <span className="kicker">Lesson details</span>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="field">
+            <label htmlFor="skill">Skill this lesson teaches</label>
+            <select className="input" id="skill" value={skillId} onChange={(e) => setSkillId(e.target.value)}>
+              {skills.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+          <div className="field">
             <label htmlFor="title">Lesson title</label>
             <input className="input" id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. The chain rule" />
-          </div>
-          <div style={{ display: 'flex', gap: 16 }}>
-            <div className="field" style={{ flex: 1 }}>
-              <label htmlFor="topic">Topic</label>
-              <select className="input" id="topic" value={topicName} onChange={(e) => setTopicName(e.target.value)}>
-                {TOPICS.map((t) => <option key={t}>{t}</option>)}
-              </select>
-            </div>
-            <div className="field" style={{ flex: 1 }}>
-              <label htmlFor="level">Exam level</label>
-              <select className="input" id="level" value={level} onChange={(e) => setLevel(e.target.value)}>
-                <option>A-Level</option>
-                <option>GCSE</option>
-              </select>
-            </div>
           </div>
         </div>
       </div>
@@ -174,7 +168,7 @@ export default function NewLessonPage() {
             <button type="button" className="btn btn-ghost" onClick={() => setPreviewOpen(false)}>Close preview</button>
           </div>
           <div style={{ maxWidth: 780, margin: '0 auto', padding: '40px clamp(20px,4vw,56px)' }}>
-            <span className="kicker">{topicName} · {level}</span>
+            <span className="kicker">{skillName}</span>
             <h1 style={{ fontSize: 30, marginBottom: 24 }}>{title.trim() || 'Untitled lesson'}</h1>
 
             {videoPreviewUrl ? (
